@@ -1,0 +1,35 @@
+name: release-readiness
+
+on:
+  # Manual trigger (keep for ad-hoc runs)
+  workflow_dispatch:
+
+  # Auto-trigger on push to release branches or version tags
+  push:
+    branches:
+      - "release/**"
+      - "hotfix/**"
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
+
+  # Auto-trigger on PRs targeting main to run readiness checks as a PR gate
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: release-readiness-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  call-reusable:
+    uses: ./.github/workflows/reusable-release-readiness.yml

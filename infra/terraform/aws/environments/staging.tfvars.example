@@ -1,0 +1,35 @@
+project_name       = "last-mile-delivery"
+environment        = "staging"
+aws_region         = "us-east-1"
+alb_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/CHANGE_ME"
+enable_nat_gateway = true
+
+api_desired_count    = 1
+worker_desired_count = 1
+
+db_instance_class        = "db.t4g.small"
+db_allocated_storage     = 50
+db_backup_retention_days = 7
+db_skip_final_snapshot   = true
+
+redis_node_type          = "cache.t4g.small"
+redis_num_cache_clusters = 1
+
+monthly_cost_budget_usd           = 120
+budget_actual_threshold_percent   = 80
+budget_forecast_threshold_percent = 100
+budget_notification_emails        = ["ops-staging@example.com"]
+budget_notification_topic_arns    = []
+
+# Optional alarm SNS topics
+alarm_topic_arns = []
+
+# Enable blue/green deployment and include rollback alarms once created.
+enable_blue_green                 = true
+codedeploy_deployment_config_name = "CodeDeployDefault.ECSAllAtOnce"
+codedeploy_alarm_names            = []
+
+tags = {
+  Owner      = "platform"
+  CostCenter = "delivery-staging"
+}

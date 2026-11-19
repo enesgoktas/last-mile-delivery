@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* Accent — orange, used only for active states, primary buttons, interactive links */
+  --color-accent-400: #fb923c;
+  --color-accent-500: #f97316;
+  --color-accent-600: #ea6c0a;
+
+  /* Brand — full orange scale so settings components and cards render correctly */
+  --color-brand-50:  #fff7ed;
+  --color-brand-100: #ffedd5;
+  --color-brand-200: #fed7aa;
+  --color-brand-300: #fdba74;
+  --color-brand-400: #fb923c;
+  --color-brand-500: #f97316;
+  --color-brand-600: #ea580c;
+  --color-brand-700: #c2410c;
+
+  /* Sidebar scale */
+  --color-sidebar-bg: #0c0e12;
+  --color-sidebar-hover: #1a1d23;
+  --color-sidebar-active: #1f2330;
+  --color-sidebar-border: #1e2028;
+}
+
+body {
+  @apply bg-white text-slate-900 antialiased;
+}
+
+/* ── Map ── */
+
+.ops-map {
+  width: 100%;
+  overflow: hidden;
+  background: #f1f5f9;
+}
+
+.ops-map-fullheight {
+  width: 100%;
+  overflow: hidden;
+  background: #f1f5f9;
+}
+
+.ops-map-fullheight .maplibregl-canvas {
+  border-radius: 0;
+}
+
+.ops-map-fullheight .maplibregl-ctrl-group {
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* ── Live pulse dot ── */
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* ── Slide-over panel ── */
+
+@keyframes slideInFromRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.slide-in-panel {
+  animation: slideInFromRight 0.15s ease-out;
+}
+
+/* ── Overlay fade ── */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.15s ease-out;
+}
+
+/* ── Scrollbar ── */
+
+.thin-scrollbar::-webkit-scrollbar {
+  width: 3px;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 2px;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}

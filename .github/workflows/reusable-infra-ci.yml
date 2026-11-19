@@ -1,0 +1,36 @@
+name: reusable-infra-ci
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  terraform-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Make infra scripts executable
+        run: chmod +x infra/scripts/terraform_validate.sh infra/scripts/check_section11_evidence.sh infra/scripts/validate_enterprise_ops_evidence.sh
+
+      - name: Section 11 evidence guard
+        run: infra/scripts/check_section11_evidence.sh
+
+      - name: Enterprise ops evidence guard
+        run: infra/scripts/validate_enterprise_ops_evidence.sh | tee ops-evidence.log
+
+      - name: Terraform validation suite
+        run: infra/scripts/terraform_validate.sh | tee infra-validate.log
+
+      - name: Upload infra-ci artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: infra-ci-${{ github.run_id }}
+          path: |
+            infra-validate.log
+            ops-evidence.log

@@ -1,0 +1,9 @@
+{
+  "name": "lastmile-pdf-render",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "marked": "^15.0.7",
+    "puppeteer": "^24.7.1"
+  }
+}

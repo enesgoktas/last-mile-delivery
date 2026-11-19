@@ -1,0 +1,148 @@
+{
+  "nav": {
+    "liveOps": "Live Ops",
+    "orders": "Orders",
+    "couriers": "Couriers",
+    "failed": "Failed",
+    "analytics": "Analytics",
+    "alerts": "Alerts",
+    "audit": "Audit",
+    "settings": "Settings"
+  },
+  "common": {
+    "loading": "Loading…",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "filter": "Filter",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {{page}}",
+    "noResults": "No results found",
+    "refresh": "Refresh",
+    "signOut": "Sign out"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signUp": "Sign up",
+    "email": "Email",
+    "password": "Password",
+    "companyName": "Company name",
+    "fullName": "Full name",
+    "forgotPassword": "Forgot password?",
+    "resetPassword": "Reset password",
+    "sendResetLink": "Send reset link",
+    "backToSignIn": "Back to sign in",
+    "inviteAccepted": "Invitation accepted",
+    "emailVerified": "Email verified",
+    "verifyEmailPrompt": "Please check your inbox to verify your email address.",
+    "resendVerification": "Resend verification email"
+  },
+  "orders": {
+    "title": "Orders",
+    "createOrder": "Create order",
+    "orderId": "Order ID",
+    "status": "Status",
+    "customer": "Customer",
+    "address": "Address",
+    "priority": "Priority",
+    "created": "Created",
+    "noOrders": "No orders found"
+  },
+  "couriers": {
+    "title": "Couriers",
+    "addCourier": "Add courier",
+    "name": "Name",
+    "vehicle": "Vehicle",
+    "status": "Status",
+    "noCouriers": "No couriers found"
+  },
+  "routes": {
+    "title": "Routes",
+    "status": "Status",
+    "courier": "Courier",
+    "stops": "Stops",
+    "distance": "Distance",
+    "approveAll": "Approve all routes",
+    "optimize": "Optimize"
+  },
+  "analytics": {
+    "title": "Analytics",
+    "deliveryRate": "Delivery Rate",
+    "avgDeliveryTime": "Avg. Delivery Time",
+    "totalDeliveries": "Total Deliveries",
+    "failedDeliveries": "Failed Deliveries",
+    "routeUtilization": "Route Utilization"
+  },
+  "slaAlerts": {
+    "title": "SLA Alerts",
+    "severity": "Severity",
+    "message": "Message",
+    "status": "Status",
+    "createdAt": "Created",
+    "acknowledge": "Acknowledge",
+    "noAlerts": "No active alerts"
+  },
+  "auditLog": {
+    "title": "Audit Log",
+    "description": "Immutable record of all system actions across your organization",
+    "timestamp": "Timestamp",
+    "action": "Action",
+    "actor": "Actor",
+    "resource": "Resource",
+    "ipAddress": "IP",
+    "allActions": "All actions",
+    "allResources": "All resources",
+    "noEvents": "No audit events found",
+    "adjustFilters": "Try adjusting the filters above"
+  },
+  "settings": {
+    "title": "Settings",
+    "tabs": {
+      "general": "General",
+      "users": "Users",
+      "apiKeys": "API Keys",
+      "operations": "Operations",
+      "branding": "Branding",
+      "sso": "SSO / OIDC",
+      "rbac": "Permissions"
+    },
+    "branding": {
+      "title": "Tenant Branding",
+      "logoUrl": "Logo URL",
+      "primaryColor": "Primary color",
+      "secondaryColor": "Secondary color",
+      "save": "Save branding",
+      "preview": "Preview"
+    },
+    "sso": {
+      "title": "Single Sign-On",
+      "issuer": "Issuer URL",
+      "clientId": "Client ID",
+      "clientSecret": "Client secret",
+      "redirectUri": "Redirect URI",
+      "scopes": "Scopes",
+      "roleClaim": "Role claim",
+      "defaultRole": "Default role",
+      "configure": "Configure SSO",
+      "disable": "Disable SSO",
+      "notConfigured": "SSO is not configured"
+    },
+    "rbac": {
+      "title": "Permissions",
+      "role": "Role",
+      "permission": "Permission",
+      "granted": "Granted",
+      "revoked": "Revoked",
+      "override": "Override",
+      "reset": "Reset to default",
+      "noOverrides": "No custom permission overrides"
+    }
+  }
+}

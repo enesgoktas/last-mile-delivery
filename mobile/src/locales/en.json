@@ -1,0 +1,55 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "back": "Back",
+    "signOut": "Sign out"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot password?"
+  },
+  "route": {
+    "title": "My Route",
+    "noActiveRoute": "No active route",
+    "stops": "{{count}} stop",
+    "stops_other": "{{count}} stops",
+    "startRoute": "Start route",
+    "completeRoute": "Complete route",
+    "nextStop": "Next stop",
+    "eta": "ETA: {{time}}"
+  },
+  "stop": {
+    "title": "Stop Details",
+    "address": "Address",
+    "customer": "Customer",
+    "packages": "Packages",
+    "instructions": "Instructions",
+    "markArrived": "Mark arrived",
+    "markComplete": "Mark complete",
+    "markFailed": "Mark failed",
+    "callCustomer": "Call customer",
+    "takePhoto": "Take photo",
+    "signature": "Capture signature",
+    "proofOfDelivery": "Proof of delivery"
+  },
+  "pod": {
+    "title": "Proof of Delivery",
+    "receiverName": "Receiver name",
+    "photo": "Photo",
+    "signature": "Signature",
+    "submit": "Submit delivery confirmation",
+    "submitting": "Submitting…"
+  },
+  "offline": {
+    "banner": "You're offline — actions will sync when reconnected",
+    "syncing": "Syncing…",
+    "synced": "All changes synced"
+  }
+}

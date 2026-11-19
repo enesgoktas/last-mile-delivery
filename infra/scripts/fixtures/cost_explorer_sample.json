@@ -1,0 +1,63 @@
+{
+  "ResultsByTime": [
+    {
+      "TimePeriod": {
+        "Start": "2026-01-01",
+        "End": "2026-02-01"
+      },
+      "Total": {
+        "UnblendedCost": {
+          "Amount": "987.65",
+          "Unit": "USD"
+        }
+      },
+      "Groups": [
+        {
+          "Keys": ["Amazon Elastic Compute Cloud - Compute"],
+          "Metrics": {
+            "UnblendedCost": {
+              "Amount": "500.12",
+              "Unit": "USD"
+            }
+          }
+        },
+        {
+          "Keys": ["Amazon Relational Database Service"],
+          "Metrics": {
+            "UnblendedCost": {
+              "Amount": "240.55",
+              "Unit": "USD"
+            }
+          }
+        },
+        {
+          "Keys": ["Amazon ElastiCache"],
+          "Metrics": {
+            "UnblendedCost": {
+              "Amount": "120.10",
+              "Unit": "USD"
+            }
+          }
+        },
+        {
+          "Keys": ["Amazon Simple Storage Service"],
+          "Metrics": {
+            "UnblendedCost": {
+              "Amount": "76.88",
+              "Unit": "USD"
+            }
+          }
+        },
+        {
+          "Keys": ["AWS Data Transfer"],
+          "Metrics": {
+            "UnblendedCost": {
+              "Amount": "50.00",
+              "Unit": "USD"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

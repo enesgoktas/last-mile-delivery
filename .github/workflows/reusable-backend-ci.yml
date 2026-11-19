@@ -1,0 +1,117 @@
+name: reusable-backend-ci
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  lint-type-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: delivery
+          POSTGRES_PASSWORD: delivery
+          POSTGRES_DB: delivery_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U delivery -d delivery_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DATABASE_URL: postgresql+asyncpg://delivery:delivery@localhost:5432/delivery_db
+      REDIS_URL: redis://localhost:6379/0
+      JWT_SECRET: ci-secret
+      CELERY_BROKER_URL: redis://localhost:6379/1
+      CELERY_RESULT_BACKEND: redis://localhost:6379/1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: "backend/requirements.txt"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pip-audit
+
+      - name: Section 11 evidence guard
+        working-directory: .
+        run: infra/scripts/check_section11_evidence.sh
+
+      - name: Validate generated API contract artifacts
+        working-directory: .
+        run: |
+          chmod +x shared/scripts/generate_api_contract.sh shared/scripts/check_api_contract.sh
+          shared/scripts/check_api_contract.sh | tee api-contract.log
+
+      - name: Lint (ruff)
+        run: ruff check app tests | tee ruff.log
+
+      - name: Migration smoke check
+        run: alembic upgrade head | tee migration-smoke.log
+
+      - name: Bytecode compile check
+        run: python -m compileall app | tee compileall.log
+
+      - name: Live infrastructure integration tests
+        run: pytest -q -m live_infra | tee pytest-live-infra.log
+
+      - name: Unit and mocked integration tests (with coverage)
+        run: pytest -q -m "not live_infra" --cov-append --cov-fail-under=32 | tee pytest.log
+
+      - name: Dependency vulnerability scan
+        run: pip-audit -r requirements.txt --progress-spinner off | tee pip-audit.log
+
+      - name: Upload coverage report to Codecov
+        uses: codecov/codecov-action@v4
+        continue-on-error: true
+        with:
+          files: backend/coverage.xml
+          flags: backend
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload backend-ci artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-ci-${{ github.run_id }}
+          path: |
+            backend/ruff.log
+            backend/migration-smoke.log
+            backend/compileall.log
+            backend/pytest-live-infra.log
+            backend/pytest.log
+            backend/pip-audit.log
+            backend/coverage.xml
+            backend/htmlcov/
+            api-contract.log

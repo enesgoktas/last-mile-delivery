@@ -1,0 +1,38 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "error": "Something went wrong"
+  },
+  "tracking": {
+    "title": "Track your delivery",
+    "orderStatus": "Order status",
+    "estimatedArrival": "Estimated arrival",
+    "stopsAway": "{{count}} stop away",
+    "stopsAway_other": "{{count}} stops away",
+    "deliveryAddress": "Delivery address",
+    "courierOnTheWay": "Your courier is on the way",
+    "deliveryInstructions": "Delivery instructions",
+    "updateInstructions": "Update instructions",
+    "reschedule": "Reschedule delivery",
+    "rescheduleTitle": "Reschedule your delivery",
+    "earliestDelivery": "Earliest delivery",
+    "latestDelivery": "Latest delivery",
+    "submitReschedule": "Submit reschedule request",
+    "rescheduled": "Reschedule request submitted",
+    "errors": {
+      "notFound": "Order not found",
+      "expired": "Tracking link has expired",
+      "generic": "Unable to load tracking information"
+    },
+    "statuses": {
+      "PENDING": "Pending",
+      "ASSIGNED": "Assigned",
+      "PICKED_UP": "Picked up",
+      "IN_TRANSIT": "On the way",
+      "DELIVERED": "Delivered",
+      "FAILED": "Delivery failed",
+      "RESCHEDULED": "Rescheduled",
+      "CANCELLED": "Cancelled"
+    }
+  }
+}

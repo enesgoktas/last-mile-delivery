@@ -1,0 +1,107 @@
+# Release Drafter configuration
+# https://github.com/release-drafter/release-drafter
+#
+# Uses Conventional Commits labels applied by the PR author or automation.
+# Labels are matched against PR titles and bodies using the `autolabeler` below.
+
+name-template: "v$RESOLVED_VERSION"
+tag-template: "v$RESOLVED_VERSION"
+commitish: main
+
+# Bump rules based on labels
+version-resolver:
+  major:
+    labels:
+      - "breaking-change"
+      - "major"
+  minor:
+    labels:
+      - "feat"
+      - "feature"
+      - "enhancement"
+  patch:
+    labels:
+      - "fix"
+      - "bug"
+      - "bugfix"
+      - "patch"
+      - "chore"
+      - "ci"
+      - "docs"
+      - "test"
+      - "refactor"
+      - "perf"
+  default: patch
+
+# Auto-label PRs based on conventional commit prefixes in the title
+autolabeler:
+  - label: "breaking-change"
+    title:
+      - "/^(feat|fix|refactor)!:/i"
+  - label: "feat"
+    title:
+      - "/^feat(\\(.+\\))?:/i"
+  - label: "fix"
+    title:
+      - "/^fix(\\(.+\\))?:/i"
+  - label: "docs"
+    title:
+      - "/^docs(\\(.+\\))?:/i"
+  - label: "chore"
+    title:
+      - "/^chore(\\(.+\\))?:/i"
+  - label: "ci"
+    title:
+      - "/^ci(\\(.+\\))?:/i"
+  - label: "test"
+    title:
+      - "/^test(\\(.+\\))?:/i"
+  - label: "refactor"
+    title:
+      - "/^refactor(\\(.+\\))?:/i"
+  - label: "perf"
+    title:
+      - "/^perf(\\(.+\\))?:/i"
+
+categories:
+  - title: "🚨 Breaking Changes"
+    labels:
+      - "breaking-change"
+      - "major"
+  - title: "🚀 Features"
+    labels:
+      - "feat"
+      - "feature"
+      - "enhancement"
+  - title: "🐛 Bug Fixes"
+    labels:
+      - "fix"
+      - "bug"
+      - "bugfix"
+  - title: "⚡ Performance"
+    labels:
+      - "perf"
+  - title: "♻️ Refactoring"
+    labels:
+      - "refactor"
+  - title: "🧪 Tests"
+    labels:
+      - "test"
+  - title: "🔧 CI/CD & Tooling"
+    labels:
+      - "ci"
+      - "chore"
+  - title: "📖 Documentation"
+    labels:
+      - "docs"
+
+change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
+change-title-escapes: '\<*_&'
+
+template: |
+  ## What's Changed
+
+  $CHANGES
+
+  ---
+  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION

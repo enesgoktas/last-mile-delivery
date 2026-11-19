@@ -1,0 +1,114 @@
+name: cost-report
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment context for budget validation"
+        required: false
+        type: choice
+        options:
+          - staging
+          - production
+      start_date:
+        description: "Report start date (YYYY-MM-DD). Optional."
+        required: false
+        type: string
+      end_date:
+        description: "Report end date (YYYY-MM-DD). Optional."
+        required: false
+        type: string
+  schedule:
+    - cron: "0 8 1 * *"
+
+permissions:
+  contents: read
+  actions: write
+  id-token: write
+
+concurrency:
+  group: cost-report-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      PROJECT_NAME: last-mile-delivery
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure required AWS OIDC secrets exist
+        run: |
+          [ -n "${{ secrets.AWS_REGION }}" ] || { echo "Missing AWS_REGION"; exit 1; }
+          [ -n "${{ secrets.AWS_ROLE_TO_ASSUME }}" ] || { echo "Missing AWS_ROLE_TO_ASSUME"; exit 1; }
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Ensure jq is installed
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Resolve report window and target environment
+        id: window
+        shell: bash
+        run: |
+          START_INPUT="${{ github.event.inputs.start_date }}"
+          END_INPUT="${{ github.event.inputs.end_date }}"
+          TARGET_ENV="${{ github.event.inputs.environment }}"
+
+          if [[ -z "${TARGET_ENV}" ]]; then
+            TARGET_ENV="production"
+          fi
+
+          if [[ -n "${START_INPUT}" && -n "${END_INPUT}" ]]; then
+            START_DATE="${START_INPUT}"
+            END_DATE="${END_INPUT}"
+          else
+            START_DATE="$(date -u -d "$(date -u +%Y-%m-01) -1 month" +%Y-%m-01)"
+            END_DATE="$(date -u +%Y-%m-01)"
+          fi
+
+          REPORT_MONTH="$(date -u -d "${START_DATE}" +%Y-%m)"
+          REPORT_PATH="docs/operations/reports/${REPORT_MONTH}.md"
+          BUDGET_VALIDATION_PATH="docs/operations/reports/${REPORT_MONTH}.budget-validation.json"
+
+          {
+            echo "target_env=${TARGET_ENV}"
+            echo "start_date=${START_DATE}"
+            echo "end_date=${END_DATE}"
+            echo "report_path=${REPORT_PATH}"
+            echo "budget_validation_path=${BUDGET_VALIDATION_PATH}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Generate cost report
+        run: |
+          mkdir -p docs/operations/reports
+          infra/scripts/monthly_cost_report.sh \
+            "${{ steps.window.outputs.start_date }}" \
+            "${{ steps.window.outputs.end_date }}" \
+            "${{ steps.window.outputs.report_path }}"
+
+      - name: Validate budget thresholds and subscribers
+        run: |
+          BUDGET_NAME="${PROJECT_NAME}-${{ steps.window.outputs.target_env }}-monthly-total"
+          infra/scripts/validate_budget_alerts.sh \
+            "${BUDGET_NAME}" \
+            "${{ vars.BUDGET_ACTUAL_THRESHOLD || '80' }}" \
+            "${{ vars.BUDGET_FORECAST_THRESHOLD || '100' }}" \
+            "${{ steps.window.outputs.budget_validation_path }}"
+
+      - name: Upload report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cost-report-${{ steps.window.outputs.start_date }}-${{ github.run_id }}
+          path: |
+            ${{ steps.window.outputs.report_path }}
+            ${{ steps.window.outputs.budget_validation_path }}

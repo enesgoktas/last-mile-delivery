@@ -1,0 +1,62 @@
+{
+  "expo": {
+    "name": "Last Mile Courier",
+    "slug": "last-mile-courier",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Courier app needs your location to update dispatch and ETA.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Courier app tracks location during active deliveries.",
+        "NSPhotoLibraryUsageDescription": "Courier app needs photo access for proof-of-delivery uploads.",
+        "NSCameraUsageDescription": "Courier app needs camera access for proof-of-delivery photos and package barcode scanning."
+      }
+    },
+    "android": {
+      "package": "com.lastmile.courier",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "CAMERA",
+        "READ_MEDIA_IMAGES",
+        "READ_EXTERNAL_STORAGE"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true,
+          "locationWhenInUsePermission": "Courier app needs your location to update route progress.",
+          "locationAlwaysAndWhenInUsePermission": "Courier app tracks location during active deliveries."
+        }
+      ],
+      "expo-notifications",
+      "expo-sqlite",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Courier app needs photo access for proof-of-delivery uploads.",
+          "cameraPermission": "Courier app needs camera access for proof-of-delivery photos."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Courier app needs camera access for proof-of-delivery photos and package barcode scanning.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      "expo-secure-store",
+      "@sentry/react-native"
+    ]
+  }
+}

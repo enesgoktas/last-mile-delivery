@@ -1,0 +1,3 @@
+run_id,commit_sha,environment,gate_id,artifact_refs,result,reviewer,timestamp_utc
+sample-run,0000000,staging,11.1,terraform-plan-staging;infra-ci,not_run,platform,2026-02-27T00:00:00Z
+sample-run,0000000,production,11.1,terraform-plan-production,not_run,platform,2026-02-27T00:00:00Z

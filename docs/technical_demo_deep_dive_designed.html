@@ -1,0 +1,1761 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Technical Demo Deep Dive</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --paper: #f4efe7;
+        --paper-strong: #fffaf2;
+        --panel: rgba(255, 251, 245, 0.92);
+        --ink: #211d1a;
+        --muted: #6d655d;
+        --line: rgba(61, 44, 30, 0.14);
+        --ember: #d56f42;
+        --ember-deep: #9f4424;
+        --teal: #127e78;
+        --gold: #d7aa46;
+        --berry: #8f4858;
+        --shadow: 0 24px 80px rgba(36, 25, 18, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      @page {
+        size: A4;
+        margin: 12mm 12mm 18mm;
+      }
+
+      html {
+        background:
+          radial-gradient(circle at top left, rgba(213, 111, 66, 0.16), transparent 32%),
+          radial-gradient(circle at bottom right, rgba(18, 126, 120, 0.1), transparent 26%),
+          var(--paper);
+      }
+
+      body {
+        margin: 0;
+        color: var(--ink);
+        font-family: "Manrope", "Avenir Next", "Segoe UI", sans-serif;
+        background: transparent;
+      }
+
+      .page-shell {
+        width: 100%;
+      }
+
+      .cover {
+        position: relative;
+        min-height: 272mm;
+        overflow: hidden;
+        border-radius: 28px;
+        padding: 18mm;
+        color: #f9f2ea;
+        background:
+          linear-gradient(140deg, rgba(255, 255, 255, 0.06), transparent 42%),
+          radial-gradient(circle at 82% 20%, rgba(213, 111, 66, 0.38), transparent 24%),
+          radial-gradient(circle at 18% 82%, rgba(18, 126, 120, 0.24), transparent 24%),
+          linear-gradient(135deg, #1f1915 0%, #2c221e 42%, #171311 100%);
+        box-shadow: var(--shadow);
+        break-after: page;
+      }
+
+      .cover::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+        background-size: 18px 18px;
+        mask-image: linear-gradient(180deg, rgba(0,0,0,0.6), transparent 85%);
+        pointer-events: none;
+      }
+
+      .cover-grid {
+        position: relative;
+        display: grid;
+        grid-template-columns: 1.3fr 0.92fr;
+        gap: 14mm;
+        height: 100%;
+      }
+
+      .cover-left {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 232mm;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: rgba(250, 242, 233, 0.84);
+        width: fit-content;
+        background: rgba(255, 255, 255, 0.06);
+        backdrop-filter: blur(12px);
+      }
+
+      .eyebrow::before {
+        content: "";
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #ffd4a2, #d56f42);
+        box-shadow: 0 0 0 5px rgba(213, 111, 66, 0.12);
+      }
+
+      .cover-title {
+        margin: 20px 0 0;
+        font-family: "Fraunces", Georgia, serif;
+        font-size: 33px;
+        line-height: 1.03;
+        letter-spacing: -0.03em;
+        max-width: 11.5cm;
+      }
+
+      .cover-subtitle {
+        margin: 16px 0 0;
+        max-width: 11.2cm;
+        font-size: 12.5px;
+        line-height: 1.7;
+        color: rgba(249, 242, 234, 0.76);
+      }
+
+      .cover-meta {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 22px;
+        max-width: 12.5cm;
+      }
+
+      .cover-metric {
+        padding: 14px 14px 12px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .cover-metric .value {
+        display: block;
+        font-size: 17px;
+        line-height: 1.1;
+        font-weight: 800;
+        color: #fff6ee;
+      }
+
+      .cover-metric .label {
+        display: block;
+        margin-top: 7px;
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(249, 242, 234, 0.58);
+      }
+
+      .cover-right {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-self: end;
+      }
+
+      .glass-panel {
+        padding: 16px;
+        border-radius: 24px;
+        background: rgba(255, 250, 242, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(16px);
+      }
+
+      .panel-kicker {
+        margin: 0 0 14px;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: rgba(249, 242, 234, 0.54);
+      }
+
+      .summary-stack {
+        display: grid;
+        gap: 10px;
+      }
+
+      .summary-card {
+        display: grid;
+        grid-template-columns: 12px 1fr;
+        gap: 12px;
+        align-items: start;
+        padding: 13px 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .summary-card p {
+        margin: 0;
+        font-size: 11.5px;
+        line-height: 1.6;
+        color: rgba(249, 242, 234, 0.84);
+      }
+
+      .summary-card-dot {
+        width: 12px;
+        height: 12px;
+        margin-top: 3px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #f0bc68, #d56f42);
+        box-shadow: 0 0 0 5px rgba(213, 111, 66, 0.12);
+      }
+
+      .cover-bottom {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px;
+        margin-top: 16px;
+      }
+
+      .chip {
+        padding: 8px 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: rgba(249, 242, 234, 0.8);
+      }
+
+      .toc-page {
+        padding: 14mm 2mm 0;
+        break-after: page;
+      }
+
+      .toc-grid {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 14px;
+      }
+
+      .light-panel {
+        background: var(--panel);
+        border: 1px solid rgba(33, 29, 26, 0.08);
+        border-radius: 26px;
+        box-shadow: var(--shadow);
+      }
+
+      .toc-panel,
+      .facts-panel {
+        padding: 16px 18px;
+      }
+
+      .toc-panel h2,
+      .facts-panel h2 {
+        margin: 0;
+        font-family: "Fraunces", Georgia, serif;
+        font-size: 22px;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+      }
+
+      .toc-copy {
+        margin: 10px 0 18px;
+        font-size: 11.5px;
+        line-height: 1.7;
+        color: var(--muted);
+        max-width: 28em;
+      }
+
+      .toc-list {
+        display: grid;
+        gap: 10px;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+      }
+
+      .toc-item {
+        display: grid;
+        grid-template-columns: 34px 1fr;
+        gap: 12px;
+        align-items: start;
+        padding: 12px 13px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(33, 29, 26, 0.06);
+      }
+
+      .toc-index {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 28px;
+        width: 28px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, rgba(213,111,66,0.18), rgba(18,126,120,0.12));
+        color: var(--ember-deep);
+        font-size: 10px;
+        font-weight: 800;
+      }
+
+      .toc-title {
+        font-size: 12px;
+        line-height: 1.55;
+        font-weight: 700;
+      }
+
+      .fact-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 16px;
+      }
+
+      .fact-card {
+        padding: 14px 12px;
+        border-radius: 18px;
+        background:
+          linear-gradient(180deg, rgba(255,255,255,0.82), rgba(255,255,255,0.58)),
+          var(--paper-strong);
+        border: 1px solid rgba(33, 29, 26, 0.08);
+      }
+
+      .fact-card .label {
+        display: block;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .fact-card .value {
+        display: block;
+        margin-top: 10px;
+        font-size: 16px;
+        line-height: 1.25;
+        font-weight: 800;
+        color: var(--ink);
+      }
+
+      .facts-note {
+        margin: 18px 0 0;
+        padding: 14px 15px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(18,126,120,0.08), rgba(213,111,66,0.12));
+        color: var(--ink);
+        font-size: 11px;
+        line-height: 1.7;
+      }
+
+      .report {
+        padding-top: 2mm;
+      }
+
+      .doc-section {
+        margin-bottom: 11px;
+      }
+
+      .section-frame {
+        position: relative;
+        padding: 16px 18px 18px;
+        border-radius: 26px;
+        background: var(--panel);
+        border: 1px solid rgba(33, 29, 26, 0.08);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .section-frame::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto auto 0;
+        width: 100%;
+        height: 7px;
+        background: linear-gradient(90deg, var(--ember), rgba(213, 111, 66, 0.18), rgba(18,126,120,0.22));
+      }
+
+      .section-heading {
+        display: grid;
+        grid-template-columns: 54px 1fr;
+        gap: 16px;
+        align-items: start;
+        margin-top: 2px;
+        margin-bottom: 14px;
+      }
+
+      .section-index {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 54px;
+        height: 54px;
+        border-radius: 18px;
+        background: linear-gradient(180deg, rgba(213,111,66,0.18), rgba(18,126,120,0.1));
+        color: var(--ember-deep);
+        font-size: 18px;
+        font-weight: 800;
+      }
+
+      .section-kicker {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 7px;
+      }
+
+      .section-title-group h2 {
+        margin: 0;
+        font-family: "Fraunces", Georgia, serif;
+        font-size: 24px;
+        line-height: 1.16;
+        letter-spacing: -0.03em;
+      }
+
+      .section-body {
+        font-size: 12px;
+        line-height: 1.78;
+        color: #2f2925;
+      }
+
+      .section-body > :first-child {
+        margin-top: 0;
+      }
+
+      .section-body > :last-child {
+        margin-bottom: 0;
+      }
+
+      .section-body h3 {
+        margin: 20px 0 10px;
+        font-family: "Fraunces", Georgia, serif;
+        font-size: 17px;
+        line-height: 1.25;
+        letter-spacing: -0.02em;
+      }
+
+      .section-body p {
+        margin: 10px 0;
+      }
+
+      .section-body ul,
+      .section-body ol {
+        margin: 10px 0 12px 20px;
+        padding: 0;
+      }
+
+      .section-body li {
+        margin: 5px 0;
+        padding-left: 2px;
+      }
+
+      .section-body li::marker {
+        color: var(--ember);
+      }
+
+      .section-body strong {
+        color: var(--ink);
+      }
+
+      .section-body code {
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: rgba(33, 29, 26, 0.06);
+        border: 1px solid rgba(33, 29, 26, 0.06);
+        font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
+        font-size: 10.4px;
+      }
+
+      .section-body pre {
+        margin: 14px 0;
+        padding: 14px 16px;
+        border-radius: 20px;
+        overflow: hidden;
+        background: #1f1815;
+        color: #f7ebdf;
+        border: 1px solid rgba(255,255,255,0.06);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+      }
+
+      .section-body pre code {
+        padding: 0;
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        color: inherit;
+        font-size: 10px;
+      }
+
+      .section-body table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin: 16px 0 10px;
+        border: 1px solid rgba(33, 29, 26, 0.09);
+        border-radius: 18px;
+        overflow: hidden;
+      }
+
+      .section-body th,
+      .section-body td {
+        padding: 11px 12px;
+        text-align: left;
+        vertical-align: top;
+        border-bottom: 1px solid rgba(33, 29, 26, 0.08);
+        font-size: 11px;
+        line-height: 1.55;
+      }
+
+      .section-body th {
+        background: linear-gradient(180deg, rgba(213,111,66,0.11), rgba(18,126,120,0.06));
+        font-size: 10px;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .section-body tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .section-body blockquote {
+        margin: 16px 0;
+        padding: 14px 16px;
+        border-left: 4px solid var(--ember);
+        border-radius: 0 18px 18px 0;
+        background: rgba(213,111,66,0.07);
+        color: var(--ink);
+      }
+
+      .section-body hr {
+        display: none;
+      }
+
+      .footer-mark {
+        margin-top: 4mm;
+        padding: 0 4px 2px;
+        font-size: 10px;
+        color: var(--muted);
+        text-align: right;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-shell">
+      <section class="cover">
+        <div class="cover-grid">
+          <div class="cover-left">
+            <div>
+              <div class="eyebrow">LastMileDelivery Technical Demo</div>
+              <h1 class="cover-title">Technical Demo Deep Dive</h1>
+              <p class="cover-subtitle">
+                A source-grounded system brief for live demo delivery. This version is designed for presentation: concrete algorithms, real implementation behavior, and the product surfaces that make the platform feel operational instead of theoretical.
+              </p>
+              <div class="cover-meta">
+                <div class="cover-metric">
+                  <span class="value">4</span>
+                  <span class="label">Product Surfaces</span>
+                </div>
+                <div class="cover-metric">
+                  <span class="value">OR-Tools + OSRM</span>
+                  <span class="label">Core Stack</span>
+                </div>
+                <div class="cover-metric">
+                  <span class="value">April 14, 2026</span>
+                  <span class="label">Snapshot Date</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="cover-bottom">
+                <span class="chip">Batch CVRPTW</span>
+                <span class="chip">Cheapest Insertion</span>
+                <span class="chip">Traffic EMA</span>
+                <span class="chip">Draft Explainability</span>
+                <span class="chip">Offline Mobile Replay</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="cover-right">
+            <div class="glass-panel">
+              <p class="panel-kicker">What Matters Most</p>
+              <div class="summary-stack">
+                
+              </div>
+            </div>
+            <div class="glass-panel">
+              <p class="panel-kicker">Presentation Angle</p>
+              <div class="summary-stack">
+                <div class="summary-card">
+                  <div class="summary-card-dot"></div>
+                  <p>Lead with operational credibility: explain planning, execution, tracking, and exception handling as one continuous system.</p>
+                </div>
+                <div class="summary-card">
+                  <div class="summary-card-dot"></div>
+                  <p>Use specific algorithm names when asked. The strongest story in this codebase is that it is explicit, constrained, and auditable.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="toc-page">
+        <div class="toc-grid">
+          <div class="light-panel toc-panel">
+            <h2>Document Map</h2>
+            <p class="toc-copy">
+              The sequence below follows the way a technical audience will naturally interrogate the system: surfaces, planning model, exact algorithms, execution behavior, integrations, and where the honest limits are.
+            </p>
+            <ol class="toc-list">
+              
+        <li class="toc-item">
+          <span class="toc-index">01</span>
+          <span class="toc-title">System Surfaces</span>
+        </li>
+      
+        <li class="toc-item">
+          <span class="toc-index">02</span>
+          <span class="toc-title">Capability Map</span>
+        </li>
+      
+        <li class="toc-item">
+          <span class="toc-index">03</span>
+          <span class="toc-title">Core Domain Model</span>
+        </li>
+      
+        <li class="toc-item">
+          <span class="toc-index">04</span>
+          <span class="toc-title">Order Intake, Policies, and State Management</span>
+        </li>
+      
+        <li class="toc-item">
+          <span class="toc-index">05</span>
+          <span class="toc-title">Batch Optimization: What Actually Happens</span>
+        </li>
+      
+        <li class="toc-item">
+          <span class="toc-index">06</span>
+          <span class="toc-title">Exact Optimization Algorithms and Heuristics</span>
+        </li>
+      
+        <li class="toc-item">
+          <span class="toc-index">07</span>
+          <span class="toc-title">Real-Time On-Demand Dispatch</span>
+        </li>
+      
+        <li class="toc-item">
+          <span class="toc-index">08</span>
+          <span class="toc-title">Preview, Explainability, and Approval</span>
+        </li>
+      
+        <li class="toc-item">
+          <span class="toc-index">09</span>
+          <span class="toc-title">Execution on the Road</span>
+        </li>
+      
+        <li class="toc-item">
+          <span class="toc-index">10</span>
+          <span class="toc-title">ETA, Tracking, and Geofencing</span>
+        </li>
+      
+        <li class="toc-item">
+          <span class="toc-index">11</span>
+          <span class="toc-title">Mobile App: Execution, Location, and Offline Resilience</span>
+        </li>
+      
+        <li class="toc-item">
+          <span class="toc-index">12</span>
+          <span class="toc-title">Notifications, Webhooks, and Integrations</span>
+        </li>
+      
+        <li class="toc-item">
+          <span class="toc-index">13</span>
+          <span class="toc-title">Security, Access, and Enterprise Controls</span>
+        </li>
+      
+        <li class="toc-item">
+          <span class="toc-index">14</span>
+          <span class="toc-title">Observability, CI, and Infrastructure</span>
+        </li>
+      
+        <li class="toc-item">
+          <span class="toc-index">15</span>
+          <span class="toc-title">Demo-Safe Language</span>
+        </li>
+      
+        <li class="toc-item">
+          <span class="toc-index">16</span>
+          <span class="toc-title">Honest Boundaries and Current Limits</span>
+        </li>
+      
+        <li class="toc-item">
+          <span class="toc-index">17</span>
+          <span class="toc-title">Best One-Paragraph Technical Summary</span>
+        </li>
+      
+            </ol>
+          </div>
+          <div class="light-panel facts-panel">
+            <h2>Quick Facts</h2>
+            <div class="fact-grid">
+              <div class="fact-card">
+                <span class="label">Primary Batch Solver</span>
+                <span class="value">OR-Tools CVRPTW</span>
+              </div>
+              <div class="fact-card">
+                <span class="label">Routing Substrate</span>
+                <span class="value">Self-hosted OSRM</span>
+              </div>
+              <div class="fact-card">
+                <span class="label">On-demand Logic</span>
+                <span class="value">Cheapest Insertion</span>
+              </div>
+              <div class="fact-card">
+                <span class="label">Traffic Model</span>
+                <span class="value">Geohash + EMA</span>
+              </div>
+              <div class="fact-card">
+                <span class="label">Backend Tests</span>
+                <span class="value">90 modules</span>
+              </div>
+              <div class="fact-card">
+                <span class="label">Max Batch Budget</span>
+                <span class="value">120 seconds</span>
+              </div>
+            </div>
+            <p class="facts-note">
+              This PDF is generated from the repository’s markdown source, not hand-laid copy. The visual treatment is custom, but the content stays tied to the code-backed deep dive.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <main class="report">
+        
+        <section class="doc-section" id="1-system-surfaces">
+          <div class="section-frame">
+            <div class="section-heading">
+              <div class="section-index">1</div>
+              <div class="section-title-group">
+                <div class="section-kicker">Overview</div>
+                <h2>1. System Surfaces</h2>
+              </div>
+            </div>
+            <div class="section-body">
+              <p>The product is implemented as four cooperating surfaces:</p>
+<ul>
+<li>Dispatcher web app (<code>frontend/src</code>): live operations, order management, fleet, insights, and settings. Main routes live in <code>frontend/src/App.tsx</code>.</li>
+<li>Courier mobile app (<code>mobile/src</code>): login, route execution, stop detail, loading checklist, barcode/POD capture, offline queue, and live location tracking.</li>
+<li>Customer tracking app (<code>tracking/src</code>): no-account tracking page backed by signed tracking links.</li>
+<li>Backend + workers (<code>backend/app</code>): FastAPI API, Celery-style background tasks, optimization, tracking, notifications, webhooks, and policy enforcement.</li>
+</ul>
+<p>At the architecture level, the backend is a modular monolith, not microservices (<code>docs/adr/0001-modular-monolith.md</code>).</p>
+<h3>1.1 Dispatcher Web Capabilities</h3>
+<p>The dispatcher UI is not just CRUD around orders. The code supports:</p>
+<ul>
+<li>LiveOps map with courier positions, route geometries, route progress, and next-stop context (<code>frontend/src/pages/LiveOpsPage.tsx</code>)</li>
+<li>route editing, stop reordering, and dispatcher notes</li>
+<li>optimization preview overlay with draft-route review, explainability, cost delta, and approve/reject flow</li>
+<li>exception center for SLA alerts, failed orders, and optimization-run attention items</li>
+<li>order intake by form and CSV import preview/publish (<code>frontend/src/pages/OrdersPage.tsx</code>)</li>
+<li>manual assign, unassign, cancel, reschedule, and &quot;dispatch now&quot; actions on orders</li>
+<li>package and inventory-event visibility from the order detail pane</li>
+<li>fleet management for courier capacity, vehicle type, depot, and working hours (<code>frontend/src/pages/FleetPage.tsx</code>)</li>
+<li>insights for delivery, failure, on-time, and courier performance trends (<code>frontend/src/pages/InsightsPage.tsx</code>)</li>
+<li>admin settings for operations policy, depots, couriers, constraints, API keys, webhooks, users, and audit log (<code>frontend/src/pages/SettingsPage.tsx</code>)</li>
+</ul>
+<h3>1.2 Courier Mobile Capabilities</h3>
+<p>The courier app supports a full route-execution flow:</p>
+<ul>
+<li>route overview with next stop, progress, status changes, and queue sync health (<code>mobile/src/screens/MyRouteScreen.tsx</code>)</li>
+<li>loading checklist before route start with barcode confirmation (<code>mobile/src/screens/LoadingChecklistScreen.tsx</code>)</li>
+<li>stop detail flow with arrival scan gating, pre-arrival call guidance, wait timers, and policy-aware proof-of-delivery (<code>mobile/src/screens/StopDetailScreen.tsx</code>)</li>
+<li>barcode scan for arrival confirmation</li>
+<li>photo capture and gallery attachment for POD</li>
+<li>signature capture via a signature canvas</li>
+<li>OTP and receiver-name capture when policy requires them</li>
+<li>offline queueing for arrive, complete, and fail actions</li>
+</ul>
+<h3>1.3 Customer Tracking Capabilities</h3>
+<p>The tracking experience is intentionally lightweight:</p>
+<ul>
+<li>no account creation</li>
+<li>white-labeled branding per tenant</li>
+<li>ETA visibility controlled by workspace policy</li>
+<li>optional live map when policy allows it</li>
+<li>policy-gated self-service rescheduling and instruction updates after failed delivery</li>
+</ul>
+
+            </div>
+          </div>
+        </section>
+      
+
+        <section class="doc-section" id="2-capability-map">
+          <div class="section-frame">
+            <div class="section-heading">
+              <div class="section-index">2</div>
+              <div class="section-title-group">
+                <div class="section-kicker">Overview</div>
+                <h2>2. Capability Map</h2>
+              </div>
+            </div>
+            <div class="section-body">
+              <table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>Implementation</th>
+<th>Where</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Batch planning</td>
+<td>OR-Tools <code>RoutingModel</code> solving a pickup-and-delivery CVRPTW with multiple resource dimensions</td>
+<td><code>backend/app/algorithms/vrp_solver.py</code></td>
+</tr>
+<tr>
+<td>Large-batch decomposition</td>
+<td>O(n)-style grid-based geographic clustering with vehicle-to-cluster assignment</td>
+<td><code>backend/app/algorithms/geo_clustering.py</code></td>
+</tr>
+<tr>
+<td>Real-time on-demand assignment</td>
+<td>Deterministic cheapest-insertion heuristic</td>
+<td><code>backend/app/algorithms/insertion_heuristic.py</code></td>
+</tr>
+<tr>
+<td>Solver warm start</td>
+<td>Previous order-to-courier assignment cache reused when overlap is high enough</td>
+<td><code>backend/app/algorithms/warm_start_cache.py</code></td>
+</tr>
+<tr>
+<td>Post-solve improvement</td>
+<td>Intra-route 2-opt local search</td>
+<td><code>backend/app/algorithms/two_opt.py</code></td>
+</tr>
+<tr>
+<td>Solver fallback</td>
+<td>Greedy nearest-neighbor / nearest-insertion fallback</td>
+<td><code>backend/app/algorithms/greedy_fallback.py</code></td>
+</tr>
+<tr>
+<td>Road-network times and geometry</td>
+<td>Self-hosted OSRM route/table/nearest APIs</td>
+<td><code>backend/app/algorithms/osrm_client.py</code></td>
+</tr>
+<tr>
+<td>Traffic adaptation</td>
+<td>Geohash6 + weekday/hour traffic multipliers updated with EMA</td>
+<td><code>backend/app/services/traffic_profile_service.py</code></td>
+</tr>
+<tr>
+<td>ETA prediction</td>
+<td>Remaining-route ETA, then direct-route fallback, then historical bias correction</td>
+<td><code>backend/app/services/eta_service.py</code></td>
+</tr>
+<tr>
+<td>Auto-arrival / dwell monitoring</td>
+<td>Haversine geofence + Redis-backed dwell state</td>
+<td><code>backend/app/services/geofencing_service.py</code></td>
+</tr>
+<tr>
+<td>Draft route preview</td>
+<td>Diff against committed routes with changed orders, violations, and cost delta</td>
+<td><code>backend/app/services/optimization_run_service.py</code></td>
+</tr>
+<tr>
+<td>Mobile offline resilience</td>
+<td>SQLite action queue with exponential retry and conflict detection</td>
+<td><code>mobile/src/services/offlineQueue.ts</code></td>
+</tr>
+<tr>
+<td>Customer self-service</td>
+<td>Signed tracking JWTs with policy-gated reschedule and instruction updates</td>
+<td><code>backend/app/services/tracking_service.py</code></td>
+</tr>
+</tbody></table>
+
+            </div>
+          </div>
+        </section>
+      
+
+        <section class="doc-section" id="3-core-domain-model">
+          <div class="section-frame">
+            <div class="section-heading">
+              <div class="section-index">3</div>
+              <div class="section-title-group">
+                <div class="section-kicker">Overview</div>
+                <h2>3. Core Domain Model</h2>
+              </div>
+            </div>
+            <div class="section-body">
+              <p>The main entities are explicit and fairly complete for a last-mile system:</p>
+<ul>
+<li>Orders: <code>Order</code>, <code>OrderStatus</code>, <code>OrderType</code>, <code>OrderPriority</code></li>
+<li>Couriers and fleet: <code>Courier</code>, vehicle capabilities, availability, depot position</li>
+<li>Planned execution: <code>Route</code>, <code>RouteStop</code>, <code>StopType</code>, <code>StopStatus</code></li>
+<li>Package inventory: <code>Package</code>, inventory events and package states</li>
+<li>Optimization lifecycle: <code>OptimizationRun</code></li>
+<li>Exceptions: <code>SLAAlert</code>, failed-order escalation state</li>
+<li>Integrations: <code>WebhookEndpoint</code>, <code>WebhookDeliveryLog</code>, <code>ApiClient</code></li>
+<li>Governance: <code>Tenant</code>, <code>AuditLog</code>, RBAC and operations policy</li>
+</ul>
+<p>Supported order types are:</p>
+<ul>
+<li><code>ON_DEMAND</code></li>
+<li><code>SCHEDULED</code></li>
+<li><code>BULK</code></li>
+<li><code>REVERSE</code></li>
+</ul>
+<p>Supported vehicle classes are:</p>
+<ul>
+<li><code>MOTORCYCLE</code></li>
+<li><code>CAR_VAN</code></li>
+<li><code>TRUCK</code></li>
+</ul>
+<p>Supported stop types are:</p>
+<ul>
+<li><code>PICKUP</code></li>
+<li><code>DELIVERY</code></li>
+<li><code>DEPOT_RETURN</code></li>
+<li><code>DEPOT_RELOAD</code></li>
+</ul>
+
+            </div>
+          </div>
+        </section>
+      
+
+        <section class="doc-section" id="4-order-intake-policies-and-state-management">
+          <div class="section-frame">
+            <div class="section-heading">
+              <div class="section-index">4</div>
+              <div class="section-title-group">
+                <div class="section-kicker">Platform</div>
+                <h2>4. Order Intake, Policies, and State Management</h2>
+              </div>
+            </div>
+            <div class="section-body">
+              <p>Order creation is not just a plain insert. <code>backend/app/services/order_service.py:create_order()</code> does several things in one flow:</p>
+<ul>
+<li>Validates standard and custom fields against the workspace operations policy.</li>
+<li>Enforces dedupe rules around <code>external_ref</code>.</li>
+<li>Generates a customer tracking token with <code>create_tracking_token()</code>.</li>
+<li>Generates a 6-digit delivery OTP when the POD policy for that order type requires OTP.</li>
+<li>Automatically creates the package/inventory record.</li>
+<li>Optionally auto-enqueues on-demand dispatch if the order type is <code>ON_DEMAND</code> and policy mode is automatic or hybrid.</li>
+</ul>
+<p>The order state machine is explicit. State transitions are validated through <code>validate_state_transition()</code> and applied through <code>apply_order_status_transition()</code>, rather than being loosely updated throughout the codebase.</p>
+<p>The intake layer also includes bulk import and geocoding support:</p>
+<ul>
+<li>CSV import is preview-first, not blind publish (<code>backend/app/services/import_service.py</code>)</li>
+<li>distinct addresses are geocoded concurrently before publish</li>
+<li>the geocoder is Photon-based and biased toward Istanbul (<code>backend/app/algorithms/photon_client.py</code>)</li>
+<li>valid rows are published into draft or pending orders while row-level validation errors are retained for invalid rows</li>
+</ul>
+<p>Package inventory is part of the main flow, not bolted on later:</p>
+<ul>
+<li>packages are auto-created for orders</li>
+<li>labels are generated in the format <code>PKG-YYYYMMDD-XXXXXX</code></li>
+<li>inventory events drive package state such as depot, loaded, in-transit, and delivered</li>
+</ul>
+<p>The operations policy layer is central to the product:</p>
+<ul>
+<li>Industry presets: <code>parcel</code>, <code>food</code>, <code>pharmacy</code>, <code>b2b</code>, <code>returns</code></li>
+<li>Optimization presets: <code>COST_SAVER</code>, <code>BALANCED</code>, <code>SERVICE_FIRST</code></li>
+<li>POD settings: photo count, signature, OTP, receiver name, notes</li>
+<li>Failure handling: retry timing, escalation hours, post-failure action</li>
+<li>Notifications: channel toggles, quiet hours, ETA visibility</li>
+<li>Dispatch settings: mode, assignment strategy, route approval rules</li>
+<li>Team permissions: per-role capability overrides</li>
+</ul>
+<p>Important preset penalty defaults:</p>
+<ul>
+<li><code>COST_SAVER</code>: lateness <code>450/min</code>, overtime <code>36/min</code>, unserved <code>220,000</code></li>
+<li><code>BALANCED</code>: lateness <code>750/min</code>, overtime <code>60/min</code>, unserved <code>320,000</code></li>
+<li><code>SERVICE_FIRST</code>: lateness <code>1200/min</code>, overtime <code>90/min</code>, unserved <code>450,000</code></li>
+</ul>
+
+            </div>
+          </div>
+        </section>
+      
+
+        <section class="doc-section" id="5-batch-optimization-what-actually-happens">
+          <div class="section-frame">
+            <div class="section-heading">
+              <div class="section-index">5</div>
+              <div class="section-title-group">
+                <div class="section-kicker">Algorithms</div>
+                <h2>5. Batch Optimization: What Actually Happens</h2>
+              </div>
+            </div>
+            <div class="section-body">
+              <p>The main batch entrypoint is <code>backend/app/services/dispatch_service.py:dispatch_batch()</code>.</p>
+<p>The flow is:</p>
+<ol>
+<li>Check OSRM health before doing any planning.</li>
+<li>Discover eligible orders.</li>
+<li>Discover eligible couriers.</li>
+<li>Deduplicate coordinates into a unique location index.</li>
+<li>Fetch OSRM distance and duration matrices.</li>
+<li>Adjust duration estimates with traffic profile multipliers.</li>
+<li>Build <code>OrderData</code> and <code>VehicleData</code>.</li>
+<li>Optionally decompose large problems geographically.</li>
+<li>Optionally expand physical couriers into multiple virtual trips.</li>
+<li>Solve with OR-Tools.</li>
+<li>Optionally improve the result with 2-opt.</li>
+<li>Validate the solution and diagnose unassigned orders.</li>
+<li>Persist routes and stops, optionally as draft routes.</li>
+<li>Optionally compute a shadow comparison against the alternate optimization mode.</li>
+</ol>
+<p>Eligibility rules matter:</p>
+<ul>
+<li>Default batch mode considers pending <code>SCHEDULED</code> and <code>BULK</code> orders inside the planning horizon.</li>
+<li>Date-scoped mode includes all order types with <code>earliest_delivery &lt; date_to</code> and <code>latest_delivery &gt;= date_from</code>.</li>
+<li>Active couriers are <code>ONLINE</code> plus <code>ON_BREAK</code>, because planning is forward-looking.</li>
+<li>The current batch query limits order fetches to 1000 records per tenant for OOM protection.</li>
+</ul>
+<p>Adaptive production solve budgets are:</p>
+<ul>
+<li><code>&lt;= 50</code> orders: 30 seconds</li>
+<li><code>&lt;= 150</code> orders: 60 seconds</li>
+<li><code>&gt; 150</code> orders: 120 seconds</li>
+</ul>
+
+            </div>
+          </div>
+        </section>
+      
+
+        <section class="doc-section" id="6-exact-optimization-algorithms-and-heuristics">
+          <div class="section-frame">
+            <div class="section-heading">
+              <div class="section-index">6</div>
+              <div class="section-title-group">
+                <div class="section-kicker">Algorithms</div>
+                <h2>6. Exact Optimization Algorithms and Heuristics</h2>
+              </div>
+            </div>
+            <div class="section-body">
+              <h3>6.1 Road-Network Routing and Matrices</h3>
+<p>Routing is backed by a self-hosted OSRM instance (<code>docs/adr/0003-osrm-self-hosted.md</code>, <code>backend/app/algorithms/osrm_client.py</code>).</p>
+<p>Implemented features:</p>
+<ul>
+<li>single A to B route</li>
+<li>single A to B route with GeoJSON geometry</li>
+<li>full N x N table matrix</li>
+<li>nearest-road snapping</li>
+</ul>
+<p>Important implementation details:</p>
+<ul>
+<li>Redis cache plus an in-process LRU cache for matrices</li>
+<li>cache key based on rounded coordinates plus cache version</li>
+<li>chunked table requests when point count exceeds <code>OSRM_MAX_TABLE_SIZE</code></li>
+<li>retry logic with delays <code>[0.5, 1.0]</code></li>
+<li>sentinel values for unreachable cells</li>
+<li>loud failure if OSRM is unavailable</li>
+</ul>
+<p>Important demo phrasing:</p>
+<ul>
+<li>Accurate: &quot;We route over a self-hosted road graph using OSRM.&quot;</li>
+<li>Inaccurate: &quot;We fall back to straight-line routing if OSRM is down.&quot;</li>
+</ul>
+<p>There is no haversine fallback for planning matrices or route geometry.</p>
+<h3>6.2 Traffic Learning</h3>
+<p>Traffic adaptation is implemented in <code>backend/app/services/traffic_profile_service.py</code>.</p>
+<p>This is a lightweight learned multiplier model:</p>
+<ul>
+<li>spatial bucket: <code>geohash6</code></li>
+<li>temporal bucket: weekday plus hour</li>
+<li>training target: <code>observed_travel_s / planned_travel_s</code></li>
+<li>update rule: exponential moving average</li>
+</ul>
+<p>The update is:</p>
+<pre><code class="language-text">ema_multiplier = alpha * ratio + (1 - alpha) * previous_ema
+</code></pre>
+<p>with <code>alpha = 0.35</code> from config.</p>
+<p>Traffic profiles are only applied when:</p>
+<ul>
+<li>traffic profiles are enabled</li>
+<li>enough samples exist for that cell</li>
+<li>the base duration is not a sentinel/unreachable value</li>
+</ul>
+<p>For matrices, the applied multiplier is:</p>
+<ul>
+<li>average of source and destination multipliers when both exist</li>
+<li>whichever side exists when only one side is populated</li>
+</ul>
+<h3>6.3 Geographic Decomposition for Large Batches</h3>
+<p>Large problems are pre-clustered in <code>backend/app/algorithms/geo_clustering.py</code>.</p>
+<p>This is not k-means and not sklearn. It is a grid-hashing heuristic:</p>
+<ul>
+<li>cluster only when order count is <code>&gt; 250</code></li>
+<li>target cluster size is about <code>100</code></li>
+<li>initial cell size is adjusted to hit the target cluster count</li>
+<li>adjacent small cells are merged</li>
+<li>vehicles are assigned to the nearest cluster centroid using a haversine-style approximation</li>
+<li>empty clusters borrow a vehicle from multi-vehicle clusters or get merged away</li>
+<li>very small clusters under 5 orders are merged into a nearby viable cluster</li>
+</ul>
+<p>This keeps matrix sizes and solve times under control without adding heavy dependencies.</p>
+<h3>6.4 Batch Solver Core: OR-Tools CVRPTW</h3>
+<p>The actual batch optimizer is in <code>backend/app/algorithms/vrp_solver.py</code>.</p>
+<p>The modeling choice is:</p>
+<ul>
+<li>OR-Tools <code>RoutingModel</code></li>
+<li>pickup-and-delivery problem</li>
+<li>capacitated vehicle routing problem with time windows</li>
+<li>multiple resource dimensions and business constraints</li>
+</ul>
+<p>The solver uses virtual nodes:</p>
+<ul>
+<li>one virtual depot per vehicle</li>
+<li>one pickup node per order</li>
+<li>one delivery node per order</li>
+</ul>
+<p>This matters because multiple orders can share the same physical coordinates, while OR-Tools still needs distinct logical nodes.</p>
+<p>Hard constraints and dimensions include:</p>
+<ul>
+<li><code>Time</code>: working hours, order windows, service time, hard latest bounds</li>
+<li><code>Weight</code>: grams</li>
+<li><code>Volume</code>: cubic centimeters</li>
+<li><code>PkgCount</code>: package count</li>
+<li><code>RouteDist</code>: max route distance</li>
+<li><code>Stops</code>: max stop count</li>
+</ul>
+<p>Pickup and delivery constraints include:</p>
+<ul>
+<li>pickup and delivery must be on the same vehicle</li>
+<li>pickup time must be before delivery time</li>
+</ul>
+<p>Break handling is modeled with OR-Tools interval variables:</p>
+<ul>
+<li><code>FixedDurationIntervalVar</code></li>
+<li>attached to the <code>Time</code> dimension per vehicle</li>
+</ul>
+<p>Vehicle restrictions are enforced directly in the model:</p>
+<ul>
+<li>fragile orders cannot go to motorcycles or <code>allow_fragile = false</code> vehicles</li>
+<li>temperature-sensitive orders require <code>allow_temp_sensitive = true</code></li>
+</ul>
+<p>Droppable orders are modeled with disjunctions:</p>
+<ul>
+<li>pickup and delivery nodes each get a drop penalty</li>
+<li>in economic mode the effective penalty comes from <code>unserved_penalty * priority_multiplier</code></li>
+<li>outside economic mode the penalty is a very large constant</li>
+</ul>
+<p>Optional fleet-spread behavior is also implemented:</p>
+<ul>
+<li>adds a <code>DeliveryCount</code> dimension</li>
+<li>sets a global span coefficient</li>
+<li>penalizes the difference between the most-loaded and least-loaded courier</li>
+</ul>
+<h3>6.5 Search Strategy</h3>
+<p>Search parameters change by problem size:</p>
+<ul>
+<li><code>&lt;= 50</code> orders:<ul>
+<li>first solution: <code>PARALLEL_CHEAPEST_INSERTION</code></li>
+<li>local search: <code>GUIDED_LOCAL_SEARCH</code></li>
+</ul>
+</li>
+<li><code>&gt; 50</code> orders:<ul>
+<li>first solution: <code>AUTOMATIC</code></li>
+<li>local search: <code>SIMULATED_ANNEALING</code></li>
+</ul>
+</li>
+</ul>
+<h3>6.6 Economic Objective vs Legacy Objective</h3>
+<p>The solver supports two objective modes.</p>
+<p>Legacy mode:</p>
+<ul>
+<li>arc cost is distance only</li>
+</ul>
+<p>Economic mode:</p>
+<ul>
+<li>arc cost includes distance cost and fuel cost</li>
+<li>per-vehicle fixed route cost can be added</li>
+<li>route span cost captures labor</li>
+<li>overtime is handled via soft upper bounds</li>
+<li>lateness is handled via soft upper bounds</li>
+<li>unserved orders carry economic penalties</li>
+</ul>
+<p>This lets the system optimize for generalized operating cost, not just shorter routes.</p>
+<p>The product also supports shadow comparison:</p>
+<ul>
+<li>solve one mode as primary</li>
+<li>solve the alternate mode in shadow</li>
+<li>compare total cost, lateness, duration, and unassigned orders</li>
+</ul>
+<h3>6.7 Warm Start</h3>
+<p><code>backend/app/algorithms/warm_start_cache.py</code> caches the previous successful assignment:</p>
+<ul>
+<li>order-to-courier mapping</li>
+<li>per-courier order sequence</li>
+<li>Redis-backed with in-process fallback</li>
+<li>1 hour TTL</li>
+</ul>
+<p>Warm start is only used when current and cached order sets overlap by at least 30 percent.</p>
+<h3>6.8 Multi-Trip Planning</h3>
+<p>Multi-trip logic is handled in <code>backend/app/services/dispatch_vrp_helpers.py</code>.</p>
+<p>The implementation:</p>
+<ul>
+<li>expands one physical courier into multiple trip-specific virtual vehicles</li>
+<li>slices the working window around reload time</li>
+<li>only charges fixed route cost on the first trip</li>
+<li>stitches solved trips back into one route afterward</li>
+<li>inserts synthetic <code>DEPOT_RETURN</code> and <code>DEPOT_RELOAD</code> stops between trips</li>
+</ul>
+<p>This means the solver can use a single courier for multiple depot cycles in one day without pretending the courier has infinite capacity.</p>
+<h3>6.9 Post-Solve Local Improvement</h3>
+<p>After a successful OR-Tools run, the system can run a pure 2-opt pass (<code>backend/app/algorithms/two_opt.py</code>).</p>
+<p>What it does:</p>
+<ul>
+<li>route-local subsequence reversal</li>
+<li>accepts only improvements that reduce distance</li>
+<li>re-simulates timing to reject infeasible swaps</li>
+<li>preserves pickup-before-delivery ordering</li>
+<li>runs inside a bounded time budget, usually 15 percent of solve time capped at 1 second</li>
+</ul>
+<h3>6.10 Solver Fallback</h3>
+<p>If OR-Tools returns no solution, the system falls back to <code>backend/app/algorithms/greedy_fallback.py</code>.</p>
+<p>This fallback:</p>
+<ul>
+<li>sorts vehicles by capacity descending</li>
+<li>repeatedly assigns the nearest feasible order to each vehicle</li>
+<li>checks capacity, time windows, fragile/temp eligibility, max stops, and max distance</li>
+</ul>
+<p>It is not optimal, but it prevents a total planning outage when the main solver cannot produce a solution.</p>
+<h3>6.11 Validation and Diagnostics</h3>
+<p>The system also validates solutions after solving instead of trusting the solver output blindly.</p>
+<p><code>backend/app/algorithms/solution_validator.py</code> checks for:</p>
+<ul>
+<li>capacity violations</li>
+<li>time-window violations</li>
+<li>shift-hour violations</li>
+<li>duplicate order assignment</li>
+<li>pickup-before-delivery violations</li>
+<li>max-stop violations</li>
+<li>max-distance violations</li>
+<li>missing pickup or delivery legs</li>
+</ul>
+<p><code>backend/app/algorithms/constraint_diagnostics.py</code> is used to explain unassigned orders by checking them against the available vehicles and pointing to likely limiting constraints.</p>
+
+            </div>
+          </div>
+        </section>
+      
+
+        <section class="doc-section" id="7-real-time-on-demand-dispatch">
+          <div class="section-frame">
+            <div class="section-heading">
+              <div class="section-index">7</div>
+              <div class="section-title-group">
+                <div class="section-kicker">Dispatch</div>
+                <h2>7. Real-Time On-Demand Dispatch</h2>
+              </div>
+            </div>
+            <div class="section-body">
+              <p>On-demand orders do not go through the full batch solver by default. They use <code>backend/app/algorithms/insertion_heuristic.py</code>.</p>
+<p>The algorithm is a deterministic cheapest-insertion heuristic:</p>
+<ul>
+<li>filter couriers by hard eligibility first</li>
+<li>evaluate insertion points for pickup and delivery within existing routes</li>
+<li>also evaluate starting a new route</li>
+<li>choose the minimum weighted detour</li>
+</ul>
+<p>Eligibility filters include:</p>
+<ul>
+<li>fragile restrictions</li>
+<li>temperature-sensitive restrictions</li>
+<li>weight capacity</li>
+<li>volume capacity</li>
+<li>package-count capacity</li>
+<li>route and shift time-window overlap</li>
+</ul>
+<p>Priority is handled by multiplying detour cost:</p>
+<ul>
+<li><code>URGENT</code>: <code>0.5</code></li>
+<li><code>HIGH</code>: <code>0.75</code></li>
+<li><code>NORMAL</code>: <code>1.0</code></li>
+<li><code>LOW</code>: <code>1.25</code></li>
+</ul>
+<p>Important nuance:</p>
+<ul>
+<li><code>LEAST_BUSY</code> and <code>PREFERRED_COURIER</code> have explicit policy behavior in dispatch.</li>
+<li>Zone checks are enforced through polygon containment.</li>
+<li>The codebase does define <code>ZONE_BASED</code> as an enum value, but it is not a separately modeled dispatch algorithm in the same way as the insertion heuristic or the OR-Tools batch solver.</li>
+</ul>
+
+            </div>
+          </div>
+        </section>
+      
+
+        <section class="doc-section" id="8-preview-explainability-and-approval">
+          <div class="section-frame">
+            <div class="section-heading">
+              <div class="section-index">8</div>
+              <div class="section-title-group">
+                <div class="section-kicker">Deep Dive</div>
+                <h2>8. Preview, Explainability, and Approval</h2>
+              </div>
+            </div>
+            <div class="section-body">
+              <p>The system does not force every optimization run straight into committed routes.</p>
+<p><code>backend/app/services/optimization_run_service.py</code> can build a draft preview with:</p>
+<ul>
+<li>changed orders marked as <code>ASSIGNED</code>, <code>MOVED</code>, <code>UNASSIGNED</code>, or <code>REORDERED</code></li>
+<li>route-level summary text</li>
+<li>run-level summary text</li>
+<li>cost delta between draft and current plan</li>
+<li>route and run violation lists</li>
+<li>ETA summary and on-time rate</li>
+<li>explainability messages for why the draft changed the plan</li>
+</ul>
+<p>This gives the dispatcher a reviewable diff, not just a new route blob.</p>
+
+            </div>
+          </div>
+        </section>
+      
+
+        <section class="doc-section" id="9-execution-on-the-road">
+          <div class="section-frame">
+            <div class="section-heading">
+              <div class="section-index">9</div>
+              <div class="section-title-group">
+                <div class="section-kicker">Deep Dive</div>
+                <h2>9. Execution on the Road</h2>
+              </div>
+            </div>
+            <div class="section-body">
+              <p>Execution behavior is handled mainly by <code>backend/app/services/route_execution_service.py</code> and <code>backend/app/services/route_service.py</code>.</p>
+<h3>9.1 Route Start and Re-Timing</h3>
+<p><code>retime_route_stops()</code> recomputes planned arrivals using:</p>
+<ul>
+<li>a route anchor from depot or live courier location</li>
+<li>OSRM travel times</li>
+<li>traffic profile multipliers</li>
+<li>configured service time per stop</li>
+</ul>
+<p>This is used after route edits and reoptimization triggers.</p>
+<h3>9.2 Arrival</h3>
+<p><code>arrive_at_stop()</code>:</p>
+<ul>
+<li>enforces sequence order</li>
+<li>marks the stop <code>ARRIVED</code></li>
+<li>records a traffic observation for learning</li>
+<li>can trigger late-stop reoptimization logic</li>
+<li>moves an order from <code>PICKED_UP</code> to <code>IN_TRANSIT</code> when the courier reaches a delivery stop</li>
+</ul>
+<h3>9.3 Completion and Proof of Delivery</h3>
+<p><code>complete_stop()</code> enforces policy-driven POD requirements:</p>
+<ul>
+<li>photo count</li>
+<li>signature</li>
+<li>OTP</li>
+<li>receiver name</li>
+<li>notes</li>
+</ul>
+<p>It supports role-based override when the policy allows it.</p>
+<p>It also drives order-state transitions:</p>
+<ul>
+<li>pickup completion moves the order to <code>PICKED_UP</code></li>
+<li>delivery completion moves it to <code>DELIVERED</code></li>
+<li><code>IN_TRANSIT</code> is applied when appropriate before final delivery</li>
+</ul>
+<p>Inventory events are emitted on pickup, reload, and delivery.</p>
+<h3>9.4 Failure Handling</h3>
+<p><code>fail_stop()</code> does more than mark a stop failed:</p>
+<ul>
+<li>validates the failure reason against policy</li>
+<li>stores custom failure detail if allowed</li>
+<li>marks the order as <code>FAILED</code></li>
+<li>starts a customer escalation clock</li>
+<li>increments attempt count</li>
+<li>either retries, returns to depot, or cancels after max attempts depending on policy</li>
+</ul>
+<p>This is a full failure workflow, not just an exception flag.</p>
+<h3>9.5 Route Geometry for LiveOps</h3>
+<p><code>backend/app/services/route_service.py:get_route_geometry()</code> builds road-following map geometry leg by leg:</p>
+<ul>
+<li>starts from the courier depot</li>
+<li>calls OSRM GeoJSON routing for each consecutive leg</li>
+<li>returns both a full-route feature and per-leg features</li>
+<li>caches the payload in Redis using a route fingerprint</li>
+</ul>
+<p>On the frontend, <code>frontend/src/hooks/useRouteGeometries.ts</code> and <code>frontend/src/components/CoordinateMap.tsx</code> consume this geometry and can fall back to straight polylines when road geometry is unavailable.</p>
+
+            </div>
+          </div>
+        </section>
+      
+
+        <section class="doc-section" id="10-eta-tracking-and-geofencing">
+          <div class="section-frame">
+            <div class="section-heading">
+              <div class="section-index">10</div>
+              <div class="section-title-group">
+                <div class="section-kicker">Tracking</div>
+                <h2>10. ETA, Tracking, and Geofencing</h2>
+              </div>
+            </div>
+            <div class="section-body">
+              <h3>10.1 Customer Tracking</h3>
+<p>Tracking is based on signed tokens, not customer accounts (<code>docs/adr/0004-jwt-tracking-links.md</code>).</p>
+<p>The token model is specific:</p>
+<ul>
+<li>one token is scoped to one order</li>
+<li>tracking tokens are issued for 48 hours</li>
+<li>tracking JWTs use a separate issuer, audience, and key path from staff auth tokens</li>
+</ul>
+<p><code>backend/app/services/tracking_service.py</code>:</p>
+<ul>
+<li>decodes the tracking JWT</li>
+<li>loads order and tenant branding</li>
+<li>loads latest courier location from cache</li>
+<li>computes ETA if the order is still active</li>
+<li>exposes policy-gated reschedule and instruction updates</li>
+</ul>
+<p>ETA visibility modes are:</p>
+<ul>
+<li><code>NONE</code></li>
+<li><code>ETA_RANGE</code></li>
+<li><code>LIVE_MAP</code></li>
+</ul>
+<h3>10.2 ETA Pipeline</h3>
+<p>ETA logic lives in <code>backend/app/services/eta_service.py</code>.</p>
+<p>The computation order is:</p>
+<ol>
+<li>If the order is on a route, compute ETA along the remaining route slice from courier position to target stop.</li>
+<li>Adjust that route-slice matrix with traffic profile multipliers.</li>
+<li>If route-slice computation fails, compute a direct OSRM route from courier to customer.</li>
+<li>Adjust the direct route with traffic profile multipliers if available.</li>
+<li>If enough historical data exists, apply a historical delay correction using completed deliveries of the same order type and nearby hour bucket.</li>
+</ol>
+<p>This is the most accurate demo description:</p>
+<ul>
+<li>&quot;ETA is route-aware when we have route context, road-network-aware through OSRM, traffic-adjusted through learned multipliers, and bias-corrected using historical delay samples.&quot;</li>
+</ul>
+<h3>10.3 Geofencing</h3>
+<p>Geofencing is implemented in <code>backend/app/services/geofencing_service.py</code>.</p>
+<p>The algorithm is a straightforward radius check using haversine distance:</p>
+<ul>
+<li>arrival radius varies by order type</li>
+<li>current stop is the first pending or arrived stop on the active route</li>
+<li>entering the radius can auto-mark the stop as arrived</li>
+<li>leaving after arrival can trigger a dwell alert after a timeout</li>
+</ul>
+<p>Redis is used to remember:</p>
+<ul>
+<li>first exit time</li>
+<li>whether an alert already fired</li>
+<li>last inside timestamp</li>
+</ul>
+<p>Geofence events emit:</p>
+<ul>
+<li>webhook tasks</li>
+<li>notification tasks</li>
+<li>audit log entries</li>
+</ul>
+
+            </div>
+          </div>
+        </section>
+      
+
+        <section class="doc-section" id="11-mobile-app-execution-location-and-offline-resilience">
+          <div class="section-frame">
+            <div class="section-heading">
+              <div class="section-index">11</div>
+              <div class="section-title-group">
+                <div class="section-kicker">Execution</div>
+                <h2>11. Mobile App: Execution, Location, and Offline Resilience</h2>
+              </div>
+            </div>
+            <div class="section-body">
+              <p>The courier app is more than a thin UI shell.</p>
+<h3>11.1 Live Location Tracking</h3>
+<p><code>mobile/src/services/locationService.ts</code>:</p>
+<ul>
+<li>uploads location every 30 seconds or 25 meters</li>
+<li>rejects low-quality samples with accuracy worse than 100 meters</li>
+<li>rejects stale samples older than 120 seconds</li>
+<li>prefers background updates</li>
+<li>falls back to a foreground watcher when background permission is not available</li>
+</ul>
+<h3>11.2 Offline Queue</h3>
+<p><code>mobile/src/services/offlineQueue.ts</code> stores execution actions in SQLite:</p>
+<ul>
+<li><code>ARRIVE_STOP</code></li>
+<li><code>COMPLETE_STOP</code></li>
+<li><code>FAIL_STOP</code></li>
+</ul>
+<p>Replay behavior:</p>
+<ul>
+<li>exponential retry with base 30 seconds and max 15 minutes</li>
+<li>idempotent-state errors are treated as success</li>
+<li>conflict-class API errors are surfaced as conflicts and removed from the queue</li>
+<li>payload issues that cannot succeed are treated as non-retriable</li>
+</ul>
+<p>This is a real offline replay mechanism, not just &quot;retry later&quot; toasts.</p>
+
+            </div>
+          </div>
+        </section>
+      
+
+        <section class="doc-section" id="12-notifications-webhooks-and-integrations">
+          <div class="section-frame">
+            <div class="section-heading">
+              <div class="section-index">12</div>
+              <div class="section-title-group">
+                <div class="section-kicker">Integrations</div>
+                <h2>12. Notifications, Webhooks, and Integrations</h2>
+              </div>
+            </div>
+            <div class="section-body">
+              <h3>12.1 Notifications</h3>
+<p><code>backend/app/services/notification_service.py</code> supports:</p>
+<ul>
+<li>email via SES</li>
+<li>SMS via Twilio</li>
+<li>push via Expo or FCM HTTP v1</li>
+</ul>
+<p>Important mechanics:</p>
+<ul>
+<li>dedupe key is <code>sha256(channel|event|recipient|order)</code></li>
+<li>email and SMS can be suppressed during quiet hours</li>
+<li>notification state is persisted as <code>PENDING</code>, <code>SENT</code>, <code>FAILED</code>, or <code>SUPPRESSED</code></li>
+</ul>
+<h3>12.2 Webhooks</h3>
+<p><code>backend/app/services/webhook_service.py</code> implements:</p>
+<ul>
+<li>per-endpoint encrypted secrets</li>
+<li>HMAC-SHA256 signing with header <code>X-Webhook-Signature</code></li>
+<li>structured delivery logs</li>
+<li>replay of dead-letter deliveries</li>
+<li>exponential retry backoff</li>
+</ul>
+<p>Backoff is:</p>
+<pre><code class="language-text">delay = min(base_seconds * 2^(attempt_number - 1), max_seconds)
+</code></pre>
+<p>Delivery status is explicit:</p>
+<ul>
+<li><code>SUCCESS</code></li>
+<li><code>RETRY_SCHEDULED</code></li>
+<li><code>DEAD_LETTER</code></li>
+</ul>
+
+            </div>
+          </div>
+        </section>
+      
+
+        <section class="doc-section" id="13-security-access-and-enterprise-controls">
+          <div class="section-frame">
+            <div class="section-heading">
+              <div class="section-index">13</div>
+              <div class="section-title-group">
+                <div class="section-kicker">Controls</div>
+                <h2>13. Security, Access, and Enterprise Controls</h2>
+              </div>
+            </div>
+            <div class="section-body">
+              <p>Security features are fairly mature for this stage:</p>
+<ul>
+<li>access and refresh JWTs include issuer, audience, type, JTI, and <code>kid</code></li>
+<li>tracking links use a separate token path and key ring</li>
+<li>revoked-token support is present</li>
+<li>OIDC supports discovery, token exchange, JWKS verification, JIT provisioning, and role sync</li>
+<li>RBAC supports both coarse roles and tenant-level overrides</li>
+<li>email verification supports token-based verification plus a grace-period enforcement model</li>
+<li>API keys are shown once and stored hashed, with a lookup prefix stored separately</li>
+</ul>
+
+            </div>
+          </div>
+        </section>
+      
+
+        <section class="doc-section" id="14-observability-ci-and-infrastructure">
+          <div class="section-frame">
+            <div class="section-heading">
+              <div class="section-index">14</div>
+              <div class="section-title-group">
+                <div class="section-kicker">Platform</div>
+                <h2>14. Observability, CI, and Infrastructure</h2>
+              </div>
+            </div>
+            <div class="section-body">
+              <h3>14.1 Observability</h3>
+<p>The backend includes:</p>
+<ul>
+<li>performance counters and latency histograms</li>
+<li>slow-query logging</li>
+<li>N+1 query-shape detection keyed by request ID</li>
+<li>optimization and OSRM metrics</li>
+<li>webhook metrics</li>
+</ul>
+<h3>14.2 API Contract Discipline</h3>
+<p>The shared contract is generated from backend OpenAPI:</p>
+<ul>
+<li><code>backend/scripts/export_openapi_schema.py</code></li>
+<li><code>shared/openapi.generated.json</code></li>
+<li><code>shared/api-schema.generated.ts</code></li>
+<li>generation uses <code>openapi-typescript</code></li>
+</ul>
+<h3>14.3 CI</h3>
+<p>The repo has separate reusable backend and web/mobile pipelines.</p>
+<p>Backend CI currently runs:</p>
+<ul>
+<li>Ruff</li>
+<li>Alembic migration smoke</li>
+<li>bytecode compile check</li>
+<li>live infrastructure tests</li>
+<li>remaining tests with coverage</li>
+<li><code>pip-audit</code></li>
+<li>API contract validation</li>
+</ul>
+<p>Web/mobile CI currently runs:</p>
+<ul>
+<li>TypeScript type-check</li>
+<li>tests with coverage</li>
+<li>builds for <code>frontend</code> and <code>tracking</code></li>
+<li>mobile type-check and tests</li>
+</ul>
+<p>Current test module counts in the repo:</p>
+<ul>
+<li>backend: 90 Python test modules</li>
+<li>frontend: 16 test files</li>
+<li>mobile: 11 test files</li>
+<li>tracking: 3 test files</li>
+</ul>
+<h3>14.4 Infrastructure</h3>
+<p>Terraform under <code>infra/terraform/aws</code> provisions the AWS stack:</p>
+<ul>
+<li>VPC and subnets</li>
+<li>ALB</li>
+<li>ECS Fargate for API and workers</li>
+<li>CodeDeploy blue/green deployment</li>
+<li>Postgres on RDS</li>
+<li>Redis on ElastiCache</li>
+<li>S3</li>
+<li>ECR</li>
+<li>CloudWatch</li>
+<li>budgets and finops controls</li>
+</ul>
+
+            </div>
+          </div>
+        </section>
+      
+
+        <section class="doc-section" id="15-demo-safe-language">
+          <div class="section-frame">
+            <div class="section-heading">
+              <div class="section-index">15</div>
+              <div class="section-title-group">
+                <div class="section-kicker">Presentation</div>
+                <h2>15. Demo-Safe Language</h2>
+              </div>
+            </div>
+            <div class="section-body">
+              <p>These are accurate ways to describe the product in a technical demo.</p>
+<p>Say this:</p>
+<ul>
+<li>&quot;Scheduled planning is modeled as a capacitated vehicle-routing problem with time windows and solved with OR-Tools.&quot;</li>
+<li>&quot;Large planning waves are geographically decomposed with a grid-based clustering heuristic before solving.&quot;</li>
+<li>&quot;Urgent on-demand jobs are inserted with a deterministic cheapest-insertion heuristic rather than re-solving the whole fleet every time.&quot;</li>
+<li>&quot;Routing and ETA calculations use a self-hosted OSRM road graph.&quot;</li>
+<li>&quot;Traffic adaptation is implemented as geohash and time-bucket multipliers updated from observed versus planned travel time.&quot;</li>
+<li>&quot;ETAs are route-aware when route context exists and fall back to direct routing when it does not.&quot;</li>
+<li>&quot;The system supports draft optimization runs and explainable diffs before committing a route plan.&quot;</li>
+</ul>
+<p>Avoid saying this:</p>
+<ul>
+<li>&quot;We use AI to decide routes.&quot;</li>
+<li>&quot;We have a generic routing solver.&quot;</li>
+<li>&quot;We always do zone-based assignment.&quot;</li>
+<li>&quot;We fall back to straight-line routing if mapping is unavailable.&quot;</li>
+<li>&quot;Customers authenticate into tracking.&quot;</li>
+</ul>
+
+            </div>
+          </div>
+        </section>
+      
+
+        <section class="doc-section" id="16-honest-boundaries-and-current-limits">
+          <div class="section-frame">
+            <div class="section-heading">
+              <div class="section-index">16</div>
+              <div class="section-title-group">
+                <div class="section-kicker">Presentation</div>
+                <h2>16. Honest Boundaries and Current Limits</h2>
+              </div>
+            </div>
+            <div class="section-body">
+              <p>These are important for staying technically accurate:</p>
+<ul>
+<li>OSRM is a hard dependency for route and matrix generation. Failures are loud.</li>
+<li><code>ZONE_BASED</code> exists as a policy enum, but it should not be presented as a separately implemented dispatch algorithm branch.</li>
+<li>The learned parts of the system are lightweight adaptive statistics, not a full ML model.</li>
+<li>Batch dispatch currently protects itself with a 1000-order fetch cap per tenant.</li>
+<li>Multi-trip is skipped in date-scoped batch mode.</li>
+</ul>
+
+            </div>
+          </div>
+        </section>
+      
+
+        <section class="doc-section" id="17-best-one-paragraph-technical-summary">
+          <div class="section-frame">
+            <div class="section-heading">
+              <div class="section-index">17</div>
+              <div class="section-title-group">
+                <div class="section-kicker">Deep Dive</div>
+                <h2>17. Best One-Paragraph Technical Summary</h2>
+              </div>
+            </div>
+            <div class="section-body">
+              <p>If we need one dense but accurate summary in the demo, this is the cleanest version:</p>
+<p>This platform is a modular-monolith last-mile system with a dispatcher web app, courier mobile app, customer tracking app, and a FastAPI plus worker backend. Scheduled and bulk planning are solved as a pickup-and-delivery CVRPTW in OR-Tools with explicit constraints for time windows, capacity, breaks, fragile or temperature-sensitive freight, max distance, max stops, optional fleet balancing, multi-trip expansion, warm starts, and a post-solve 2-opt pass. Real-time on-demand jobs use a separate deterministic cheapest-insertion heuristic. All routing and ETA calculations are road-network-based through a self-hosted OSRM instance, then adjusted with geohash and time-bucket traffic multipliers learned from observed travel times. The execution layer adds geofenced auto-arrival, proof-of-delivery enforcement, failed-delivery recovery workflows, draft route preview and explainability, customer self-service tracking links, and integrations through signed webhooks and multi-channel notifications.</p>
+
+            </div>
+          </div>
+        </section>
+      
+      </main>
+      <div class="footer-mark">LastMileDelivery · Technical Demo Deck Companion</div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,106 @@
+name: reusable-web-mobile-ci
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  web-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - frontend
+          - tracking
+    defaults:
+      run:
+        working-directory: ${{ matrix.app }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "${{ matrix.app }}/package-lock.json"
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint (TypeScript type-check)
+        run: npm run lint | tee lint.log
+
+      - name: Test (with coverage)
+        run: npm run test -- --coverage --reporter=verbose 2>&1 | tee test.log
+
+      - name: Build
+        run: npm run build | tee build.log
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        continue-on-error: true
+        with:
+          files: ${{ matrix.app }}/coverage/lcov.info
+          flags: ${{ matrix.app }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload web artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-mobile-ci-${{ matrix.app }}-${{ github.run_id }}
+          path: |
+            ${{ matrix.app }}/lint.log
+            ${{ matrix.app }}/test.log
+            ${{ matrix.app }}/build.log
+            ${{ matrix.app }}/coverage/
+
+  mobile-typecheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "mobile/package-lock.json"
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint (TypeScript type-check)
+        run: npm run lint | tee lint.log
+
+      - name: Unit tests (with coverage)
+        run: npm test -- --coverage 2>&1 | tee mobile-test.log
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        continue-on-error: true
+        with:
+          files: mobile/coverage/lcov.info
+          flags: mobile
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload mobile artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-mobile-ci-mobile-${{ github.run_id }}
+          path: |
+            mobile/lint.log
+            mobile/mobile-test.log
+            mobile/coverage/

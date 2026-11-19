@@ -1,0 +1,224 @@
+name: reusable-release-readiness
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  backend-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: delivery
+          POSTGRES_PASSWORD: delivery
+          POSTGRES_DB: delivery_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U delivery -d delivery_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DATABASE_URL: postgresql+asyncpg://delivery:delivery@localhost:5432/delivery_db
+      REDIS_URL: redis://localhost:6379/0
+      JWT_SECRET: ci-secret
+      CELERY_BROKER_URL: redis://localhost:6379/1
+      CELERY_RESULT_BACKEND: redis://localhost:6379/1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: "backend/requirements.txt"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pip-audit
+
+      - name: Validate generated API contract artifacts
+        working-directory: .
+        run: |
+          chmod +x shared/scripts/generate_api_contract.sh shared/scripts/check_api_contract.sh
+          shared/scripts/check_api_contract.sh | tee api-contract.log
+
+      - name: Lint backend (ruff)
+        run: ruff check app tests | tee release-readiness-backend-ruff.log
+
+      - name: Run backend validation suite
+        run: |
+          set -euo pipefail
+          alembic upgrade head | tee release-readiness-backend-migration.log
+          python -m compileall app | tee release-readiness-backend-compile.log
+          pytest -q -m live_infra | tee release-readiness-backend-live-infra.log
+          pytest -q -m "not live_infra" --cov-append --cov-fail-under=32 | tee release-readiness-backend.log
+
+      - name: Audit backend dependencies
+        run: pip-audit -r requirements.txt --progress-spinner off | tee release-readiness-backend-pip-audit.log
+
+      - name: Upload backend validation artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-readiness-backend
+          path: |
+            backend/release-readiness-backend-ruff.log
+            backend/release-readiness-backend-migration.log
+            backend/release-readiness-backend-compile.log
+            backend/release-readiness-backend-live-infra.log
+            backend/release-readiness-backend.log
+            backend/release-readiness-backend-pip-audit.log
+            api-contract.log
+
+  web-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - frontend
+          - tracking
+    defaults:
+      run:
+        working-directory: ${{ matrix.app }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "${{ matrix.app }}/package-lock.json"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit web dependencies
+        run: npm audit --audit-level=high | tee release-readiness-${{ matrix.app }}-audit.log
+
+      - name: Run lint, tests, and build
+        run: |
+          set -euo pipefail
+          npm run lint | tee release-readiness-${{ matrix.app }}-lint.log
+          npm test -- --coverage | tee release-readiness-${{ matrix.app }}-test.log
+          npm run build | tee release-readiness-${{ matrix.app }}-build.log
+
+      - name: Upload web validation artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-readiness-${{ matrix.app }}
+          path: |
+            ${{ matrix.app }}/release-readiness-${{ matrix.app }}-audit.log
+            ${{ matrix.app }}/release-readiness-${{ matrix.app }}-lint.log
+            ${{ matrix.app }}/release-readiness-${{ matrix.app }}-test.log
+            ${{ matrix.app }}/release-readiness-${{ matrix.app }}-build.log
+
+  mobile-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "mobile/package-lock.json"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit mobile dependencies
+        run: npm audit --audit-level=high | tee release-readiness-mobile-audit.log
+
+      - name: Run mobile lint, typecheck, and tests
+        run: |
+          set -euo pipefail
+          npm run lint | tee release-readiness-mobile-lint.log
+          npm run typecheck | tee release-readiness-mobile-typecheck.log
+          npm test -- --coverage | tee release-readiness-mobile-test.log
+
+      - name: Upload mobile validation artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-readiness-mobile
+          path: |
+            mobile/release-readiness-mobile-audit.log
+            mobile/release-readiness-mobile-lint.log
+            mobile/release-readiness-mobile-typecheck.log
+            mobile/release-readiness-mobile-test.log
+
+  infra-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: chmod +x infra/scripts/terraform_validate.sh infra/scripts/check_section11_evidence.sh infra/scripts/validate_backup_controls.sh infra/scripts/validate_recovery_posture.sh infra/scripts/validate_enterprise_ops_evidence.sh
+
+      - name: Section 11 evidence guard
+        run: infra/scripts/check_section11_evidence.sh
+
+      - name: Validate Terraform and security checks
+        run: infra/scripts/terraform_validate.sh | tee release-readiness-infra.log
+
+      - name: Validate backup controls
+        run: infra/scripts/validate_backup_controls.sh | tee release-readiness-backup-controls.log
+
+      - name: Validate recovery posture
+        run: infra/scripts/validate_recovery_posture.sh | tee release-readiness-recovery-posture.log
+
+      - name: Validate enterprise ops evidence
+        run: infra/scripts/validate_enterprise_ops_evidence.sh | tee release-readiness-enterprise-ops-evidence.log
+
+      - name: Upload infra validation artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-readiness-infra
+          path: |
+            release-readiness-infra.log
+            release-readiness-backup-controls.log
+            release-readiness-recovery-posture.log
+            release-readiness-enterprise-ops-evidence.log

@@ -1,0 +1,3 @@
+# Vendored Solomon `.txt` instances — populate via scripts/download_solomon.py.
+# Tracked separately so the repo stays small and copyright stays clean.
+*.txt
